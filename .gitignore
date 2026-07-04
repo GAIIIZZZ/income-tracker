@@ -1,0 +1,28 @@
+# --- Python (backend) ---
+backend/.venv/
+**/__pycache__/
+*.pyc
+
+# --- Real data: never commit real transactions, slip images, or DB backups ---
+backend/data/
+backend/zone_profiles_seed.json
+OCR/inbox/*
+OCR/processed/*
+OCR/needs_review/*
+OCR/uploads/*
+OCR/zone_samples/*
+!OCR/inbox/.gitkeep
+!OCR/processed/.gitkeep
+!OCR/needs_review/.gitkeep
+!OCR/uploads/.gitkeep
+!OCR/zone_samples/.gitkeep
+
+# --- Node (frontend) ---
+frontend/node_modules/
+npm-debug.log*
+
+# --- OS / editor / tooling junk ---
+.DS_Store
+Thumbs.db
+.vscode/
+.claude/

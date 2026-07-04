@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Income Tracker</title>
+<script>
+  (function () {
+    var saved = localStorage.getItem("theme-preference");
+    document.documentElement.setAttribute("data-theme", saved === "light" ? "light" : "dark");
+  })();
+</script>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <button id="sidebarToggle" class="sidebar-toggle" title="Collapse sidebar">&#171;</button>
+    <div class="sidebar-content" id="sidebarContent">
+      <div class="sidebar-header">Working</div>
+      <ul class="sidebar-list" id="workingList">
+        <li class="sidebar-item active" data-slot="1">
+          <span class="sidebar-item-text"><span class="sidebar-item-name">Current (unsaved)</span></span>
+        </li>
+      </ul>
+      <button id="addSecondSlotBtn" class="link-like sidebar-add-slot">Add more Set +</button>
+
+      <div class="sidebar-header sidebar-header-row">
+        <span>Saved</span>
+        <select id="batchSortSelect" class="sidebar-sort-select">
+          <option value="favorite">Favorites first</option>
+          <option value="created">Newest</option>
+          <option value="updated">Recently edited</option>
+          <option value="name">Name</option>
+        </select>
+      </div>
+      <ul class="sidebar-list" id="sidebarList"></ul>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">&#128176;</div>
+        <h1>Income Tracker</h1>
+      </div>
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="transactions">Transactions</button>
+        <button class="tab-btn" data-tab="gallery">Gallery</button>
+        <button class="tab-btn" data-tab="zones">Zones</button>
+      </nav>
+      <div class="theme-switch" id="themeSwitch">
+        <button class="theme-btn" data-theme="light">Light</button>
+        <button class="theme-btn" data-theme="dark">Dark</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="tab-transactions" class="tab-panel active">
+
+        <div class="upload-area" id="uploadArea">
+          <div class="upload-icon">&#8593;</div>
+          <p class="upload-title">Drag &amp; drop slip images or a whole folder here</p>
+          <p class="upload-sub">or <span class="link-like" id="browseFilesLink">choose files</span> / <span class="link-like" id="browseFolderLink">choose a folder</span></p>
+          <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp,.bmp" multiple hidden />
+          <input type="file" id="folderInput" webkitdirectory directory multiple hidden />
+        </div>
+
+        <div id="batchProgress" class="batch-progress" hidden>
+          <div class="batch-header">
+            <span id="batchTitle">Processing...</span>
+            <button id="batchDismiss" class="link-like" hidden>Dismiss</button>
+          </div>
+          <ul id="batchList" class="batch-list"></ul>
+          <div id="batchSummary" class="batch-summary" hidden></div>
+        </div>
+
+        <div class="stats-bar">
+          <div class="stat-card">
+            <div class="stat-label">Transactions shown</div>
+            <div class="stat-value" id="statCount">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total amount</div>
+            <div class="stat-value" id="statTotal">0.00</div>
+          </div>
+          <div class="stat-card stat-pending">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value" id="statPending">0</div>
+          </div>
+          <div class="stat-card stat-warn">
+            <div class="stat-label">Needs review</div>
+            <div class="stat-value" id="statReview">0</div>
+          </div>
+        </div>
+
+        <div id="batchInfoBar" class="batch-info-bar" hidden></div>
+
+        <div class="toolbar">
+          <input type="text" id="searchInput" placeholder="Search name..." />
+          <select id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="pending">pending</option>
+            <option value="corrected">corrected</option>
+            <option value="needs_review">needs review</option>
+          </select>
+          <button id="refreshBtn">Refresh</button>
+          <button id="addManualBtn">+ Add manual entry</button>
+          <button id="clearBtn" class="btn-danger">Clear shown</button>
+          <button id="saveBtn" class="btn-primary">Save Transactions</button>
+        </div>
+
+        <div class="table-wrap">
+          <table id="txTable">
+            <thead>
+              <tr>
+                <th><button class="sort-btn" data-sort="transaction_date">Date <span class="sort-indicator"></span></button></th>
+                <th><button class="sort-btn" data-sort="transaction_time">Time <span class="sort-indicator"></span></button></th>
+                <th><button class="sort-btn" data-sort="sender_name">Name <span class="sort-indicator"></span></button></th>
+                <th><button class="sort-btn" data-sort="amount">Amount <span class="sort-indicator"></span></button></th>
+                <th><button class="sort-btn" data-sort="notes">Notes <span class="sort-indicator"></span></button></th>
+                <th><button class="sort-btn" data-sort="status">Status <span class="sort-indicator"></span></button></th>
+                <th>Image</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="txBody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3">Total</td>
+                <td id="footerTotal">0.00</td>
+                <td colspan="4"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="graph-section">
+          <div class="graph-header">
+            <h2>Income over time</h2>
+            <div class="graph-controls">
+              <label class="date-range-label">From <input type="date" id="graphDateFrom" /></label>
+              <label class="date-range-label">To <input type="date" id="graphDateTo" /></label>
+              <select id="graphPeriod">
+                <option value="day">Day</option>
+                <option value="month" selected>Month</option>
+                <option value="year">Year</option>
+              </select>
+            </div>
+          </div>
+          <div class="graph-body">
+            <div id="graphLegend" class="graph-legend"></div>
+            <div id="graphContainer" class="graph-container"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-gallery" class="tab-panel">
+        <div class="toolbar">
+          <button id="refreshGalleryBtn">Refresh gallery</button>
+        </div>
+        <div id="galleryGrid" class="gallery-grid"></div>
+      </section>
+
+      <section id="tab-zones" class="tab-panel">
+        <div class="toolbar">
+          <button id="newZoneProfileBtn" class="btn-primary">+ New Profile</button>
+          <button id="exportZoneProfilesBtn">Export</button>
+          <button id="importZoneProfilesBtn">Import</button>
+          <button id="saveAsSeedBtn">Save as Default</button>
+          <input type="file" id="zoneImportInput" accept=".json" hidden />
+        </div>
+
+        <div id="zoneProfileList" class="zone-profile-grid"></div>
+
+        <div id="zoneCalibrator" class="zone-calibrator" hidden>
+          <h2>New Zone Profile</h2>
+          <p class="zone-help">Upload one sample slip, draw a box around each field you want
+            cropped, then save. Future uploads are matched to this profile primarily by
+            visual similarity to the sample image (so it works even when the bank's name
+            never appears as text) — no need to identify the bank at all.</p>
+
+          <div class="zone-form-row">
+            <input type="text" id="zoneProfileName" placeholder="Profile name — just a label for you, e.g. \"Layout 1\"" />
+            <input type="text" id="zoneProfileKeywords" placeholder="Optional: keyword(s) that appear in the OCR text, if any, comma-separated" />
+          </div>
+
+          <div class="zone-upload-row">
+            <input type="file" id="zoneSampleInput" accept=".jpg,.jpeg,.png,.webp,.bmp" hidden />
+            <button id="zoneSampleBtn" class="link-like">Choose sample slip image</button>
+            <span id="zoneSampleFileName" class="zone-sample-filename"></span>
+          </div>
+
+          <div class="zone-field-picker">
+            <span>Drawing box for:</span>
+            <select id="zoneFieldSelect">
+              <option value="sender_name">Sender Name</option>
+              <option value="transaction_date">Date</option>
+              <option value="transaction_time">Time</option>
+              <option value="amount">Amount</option>
+            </select>
+          </div>
+
+          <div id="zoneImageWrap" class="zone-image-wrap">
+            <img id="zoneSampleImg" alt="Sample slip" />
+            <div id="zoneBoxLayer" class="zone-box-layer"></div>
+          </div>
+
+          <div class="toolbar">
+            <button id="zoneCancelBtn">Cancel</button>
+            <button id="zoneSaveBtn" class="btn-primary">Save Profile</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      &copy; 2026 Dechawat . Chanatip - Transaction OCR for qwen2.5:1.5b
+    </footer>
+  </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
