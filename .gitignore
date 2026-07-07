@@ -26,3 +26,12 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .claude/
+
+# --- Logs written by start_silent.vbs (hidden launcher) ---
+update_log.txt
+backend/backend_log.txt
+frontend/frontend_log.txt
+
+# --- Cloud alt (cloud/) - never commit real Supabase/Groq keys ---
+cloud/.venv/
+cloud/.streamlit/secrets.toml
