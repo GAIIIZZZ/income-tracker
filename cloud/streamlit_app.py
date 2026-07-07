@@ -171,7 +171,7 @@ with tab_gallery:
         for i, row in enumerate(all_rows):
             with cols[i % 4]:
                 if row.get("image_url"):
-                    st.image(row["image_url"], use_container_width=True)
+                    st.image(row["image_url"], use_column_width=True)
                 st.caption(
                     f"**{row.get('sender_name') or '—'}**\n\n"
                     f"{row.get('transaction_date') or '—'} {row.get('transaction_time') or ''}\n\n"
