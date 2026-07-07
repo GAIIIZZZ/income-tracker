@@ -49,6 +49,10 @@
         <button class="tab-btn" data-tab="gallery">Gallery</button>
         <button class="tab-btn" data-tab="zones">Zones</button>
       </nav>
+      <div class="mode-switch" id="modeSwitch">
+        <button class="mode-btn active" data-mode="income">Income</button>
+        <button class="mode-btn" data-mode="expense">Expense</button>
+      </div>
       <div class="theme-switch" id="themeSwitch">
         <button class="theme-btn" data-theme="light">Light</button>
         <button class="theme-btn" data-theme="dark">Dark</button>
@@ -116,7 +120,7 @@
               <tr>
                 <th><button class="sort-btn" data-sort="transaction_date">Date <span class="sort-indicator"></span></button></th>
                 <th><button class="sort-btn" data-sort="transaction_time">Time <span class="sort-indicator"></span></button></th>
-                <th><button class="sort-btn" data-sort="sender_name">Name <span class="sort-indicator"></span></button></th>
+                <th><button class="sort-btn" data-sort="sender_name"><span id="nameColumnLabel">Name</span> <span class="sort-indicator"></span></button></th>
                 <th><button class="sort-btn" data-sort="amount">Amount <span class="sort-indicator"></span></button></th>
                 <th><button class="sort-btn" data-sort="notes">Notes <span class="sort-indicator"></span></button></th>
                 <th><button class="sort-btn" data-sort="status">Status <span class="sort-indicator"></span></button></th>
@@ -137,7 +141,7 @@
 
         <div class="graph-section">
           <div class="graph-header">
-            <h2>Income over time</h2>
+            <h2 id="graphTitle">Income over time</h2>
             <div class="graph-controls">
               <label class="date-range-label">From <input type="date" id="graphDateFrom" /></label>
               <label class="date-range-label">To <input type="date" id="graphDateTo" /></label>

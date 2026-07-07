@@ -25,7 +25,7 @@ def recheck_transaction(row: dict) -> tuple[str, Optional[str]]:
         return "skipped", None
 
     try:
-        fresh = llm.structure(raw_text)
+        fresh = llm.structure(raw_text, transaction_type=row.get("transaction_type") or "income")
     except llm.LLMParseError as exc:
         return "skipped", f"recheck failed: {exc}"
 

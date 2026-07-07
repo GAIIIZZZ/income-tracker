@@ -12,6 +12,7 @@ router = APIRouter()
 def list_transactions(
     batch_id: Optional[str] = "unsaved",
     draft_slot: Optional[int] = None,
+    transaction_type: Optional[str] = None,
     status: Optional[str] = None,
     search: Optional[str] = None,
     date_from: Optional[str] = None,
@@ -30,6 +31,9 @@ def list_transactions(
         clauses.append("batch_id = ?")
         params.append(int(batch_id))
 
+    if transaction_type:
+        clauses.append("transaction_type = ?")
+        params.append(transaction_type)
     if status:
         clauses.append("status = ?")
         params.append(status)
@@ -66,10 +70,11 @@ def create_transaction(payload: TransactionCreate):
     with get_conn() as conn:
         cur = conn.execute(
             """INSERT INTO transactions
-                (batch_id, draft_slot, sender_name, transaction_date, transaction_time, amount, notes, status)
-               VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)""",
+                (batch_id, draft_slot, transaction_type, sender_name, transaction_date, transaction_time, amount, notes, status)
+               VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 payload.draft_slot or 1,
+                payload.transaction_type or "income",
                 payload.sender_name,
                 payload.transaction_date,
                 payload.transaction_time,

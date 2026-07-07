@@ -9,10 +9,14 @@ from ..pipeline.organizer import run_pipeline
 router = APIRouter()
 
 ALLOWED_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+ALLOWED_TRANSACTION_TYPES = {"income", "expense"}
 
 
 @router.post("/upload")
-async def upload_image(file: UploadFile, draft_slot: int = Form(1)):
+async def upload_image(file: UploadFile, draft_slot: int = Form(1), transaction_type: str = Form("income")):
+    if transaction_type not in ALLOWED_TRANSACTION_TYPES:
+        raise HTTPException(400, f"transaction_type must be one of {sorted(ALLOWED_TRANSACTION_TYPES)}")
+
     suffix = "." + file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
     if suffix not in ALLOWED_SUFFIXES:
         raise HTTPException(400, f"Unsupported file type: {suffix}")
@@ -27,5 +31,5 @@ async def upload_image(file: UploadFile, draft_slot: int = Form(1)):
     contents = await file.read()
     dest.write_bytes(contents)
 
-    record = await run_in_threadpool(run_pipeline, str(dest), draft_slot)
+    record = await run_in_threadpool(run_pipeline, str(dest), draft_slot, transaction_type)
     return record

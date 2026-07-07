@@ -7,11 +7,36 @@ import requests
 
 from ..config import OLLAMA_HOST, OLLAMA_MODEL
 
-SYSTEM_PROMPT = """You are a bank transfer slip parsing assistant. You will be given raw OCR
+# transaction_type determines which of the slip's two names is the one that matters: for
+# income (you received money), that's the SENDER (top); for an expense (you paid someone),
+# it's the RECEIVER (bottom) - you already know your own name, the counterparty is what's
+# worth recording either way. The JSON key stays "sender_name" for both to avoid a DB rename;
+# it always means "the counterparty name", whichever side of the slip that is for this type.
+_EXTRACTION_TARGET = {
+    "income": (
+        'Extract ONLY the sender\'s (top) name — never the receiver\'s (bottom) name, since '
+        "this is an incoming transfer and the sender is the counterparty that matters."
+    ),
+    "expense": (
+        'Extract ONLY the receiver\'s (bottom) name — never the sender\'s (top) name, since '
+        "this is an outgoing payment and the receiver is the counterparty that matters."
+    ),
+}
+
+_EXAMPLE_OUTPUT = {
+    "income": '{"sender_name": "น.ส. กัลยา ใจดี", "transaction_date": "2569-06-26", "transaction_time": "16:46", "amount": 340.0}',
+    "expense": '{"sender_name": "น.ส. สุภาพร วงศ์บุปผา", "transaction_date": "2569-06-26", "transaction_time": "16:46", "amount": 340.0}',
+}
+
+
+def _system_prompt(transaction_type: str) -> str:
+    extraction_target = _EXTRACTION_TARGET.get(transaction_type, _EXTRACTION_TARGET["income"])
+    example_output = _EXAMPLE_OUTPUT.get(transaction_type, _EXAMPLE_OUTPUT["income"])
+    return f"""You are a bank transfer slip parsing assistant. You will be given raw OCR
 text from a Thai or English bank transfer slip. The text may contain OCR errors. These slips
 always list TWO names: the SENDER (top, usually labeled "จาก" / "From") and the RECEIVER
-(bottom, usually labeled "ไปยัง" / "To"). Extract ONLY the sender's (top) name — never the
-receiver's (bottom) name. Respond with ONLY a JSON object, no other text.
+(bottom, usually labeled "ไปยัง" / "To"). {extraction_target} Respond with ONLY a JSON object,
+no other text.
 
 Thai month names/abbreviations, for reference (do not confuse ones that share a syllable,
 e.g. มี.ค.=March vs มิ.ย.=June, or พ.ค.=May vs พ.ย.=November):
@@ -20,14 +45,14 @@ e.g. มี.ค.=March vs มิ.ย.=June, or พ.ค.=May vs พ.ย.=November
 พฤศจิกายน/พ.ย.=11  ธันวาคม/ธ.ค.=12
 
 Schema:
-{
-  "sender_name": string or null (the TOP/sender name only),
+{{
+  "sender_name": string or null (the counterparty name described above),
   "transaction_date": string "YYYY-MM-DD" or null, using the Thai Buddhist Era (พ.ศ.) year —
      if the slip shows a Gregorian year (e.g. 2026), convert it to Buddhist Era by ADDING 543
      (2026 -> 2569); if the slip already shows a Buddhist Era year (e.g. 2569), keep it as-is,
   "transaction_time": string "HH:MM" (24-hour) or null,
   "amount": number or null (the transferred amount, not the fee)
-}
+}}
 
 Example input:
 โอนเงินสำเร็จ
@@ -44,7 +69,7 @@ Example input:
 0.00 บาท
 
 Example output:
-{"sender_name": "น.ส. กัลยา ใจดี", "transaction_date": "2569-06-26", "transaction_time": "16:46", "amount": 340.0}
+{example_output}
 """
 
 
@@ -248,13 +273,18 @@ def _build_zone_hint_block(zone_hints) -> str:
     )
 
 
-def structure(raw_text: str, zone_hints: dict = None) -> dict:
-    """Returns a structured dict per SYSTEM_PROMPT's schema. Raises LLMParseError on failure.
+def structure(raw_text: str, zone_hints: dict = None, transaction_type: str = "income") -> dict:
+    """Returns a structured dict per the schema in _system_prompt(). Raises LLMParseError on
+    failure.
 
     zone_hints, if given, is {field: cropped_text} from a matched zone profile (see zonal.py) —
-    high-confidence text cropped from a known field position, passed as extra context."""
+    high-confidence text cropped from a known field position, passed as extra context.
+
+    transaction_type ("income" or "expense") controls which of the slip's two names gets
+    extracted as "sender_name" - see _system_prompt()."""
+    system_prompt = _system_prompt(transaction_type)
     hint_block = _build_zone_hint_block(zone_hints)
-    prompt = f"{SYSTEM_PROMPT}\n\nOCR text:\n{raw_text}{hint_block}\n\nJSON output:"
+    prompt = f"{system_prompt}\n\nOCR text:\n{raw_text}{hint_block}\n\nJSON output:"
 
     regex_date = None
     if zone_hints and zone_hints.get("transaction_date"):
@@ -280,7 +310,7 @@ def structure(raw_text: str, zone_hints: dict = None) -> dict:
         except (json.JSONDecodeError, requests.RequestException, KeyError) as exc:
             last_error = exc
             prompt = (
-                f"{SYSTEM_PROMPT}\n\nOCR text:\n{raw_text}{hint_block}\n\n"
+                f"{system_prompt}\n\nOCR text:\n{raw_text}{hint_block}\n\n"
                 "Your previous response was not valid JSON. Respond with ONLY the JSON object, "
                 "no markdown, no explanation.\n\nJSON output:"
             )

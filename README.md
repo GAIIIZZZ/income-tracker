@@ -204,6 +204,14 @@ independent build — it doesn't replace or require the local app.
 
 ## How to use the app once it's running
 
+0. **Income vs Expense** — the Income / Expense switch at the top of the page controls
+   which "mode" you're in. Everything you upload, save, and view (working sets, saved
+   batches, the gallery, the graph) is scoped to whichever mode is currently selected —
+   switching modes shows a completely separate set of data, so your income and expense
+   tracking never mix. In Income mode the AI extracts the **sender's** name off the slip
+   (who sent you money); in Expense mode it extracts the **receiver's** name instead (who
+   you paid) — same slip layout, different side read. Saved batches are tagged and shown
+   with an "income" or "expense" badge so you can always tell which is which.
 1. **Upload slips** — drag and drop images (or a whole folder of them) onto the upload
    area, or click it to choose files. Each one gets OCR'd and AI-structured
    automatically; this can take 10-30 seconds per image on CPU.
@@ -486,6 +494,12 @@ private 100% เหมือนแอปเวอร์ชัน local อีก
 
 ## วิธีใช้งานแอปหลังจากรันขึ้นมาแล้ว
 
+0. **รายรับ vs รายจ่าย (Income vs Expense)** — สวิตช์ Income / Expense ด้านบนของหน้าเว็บ
+   ควบคุมว่าตอนนี้อยู่ใน "โหมด" ไหน ทุกอย่างที่อัปโหลด บันทึก และดู (working sets, ชุดที่บันทึกแล้ว,
+   แกลเลอรี, กราฟ) จะผูกอยู่กับโหมดที่เลือกอยู่ตอนนั้น — สลับโหมดแล้วจะเห็นชุดข้อมูลคนละชุดกันไปเลย
+   ทำให้รายรับกับรายจ่ายไม่ปนกัน ในโหมด Income ระบบ AI จะดึงชื่อ **ผู้โอน** จากสลิป (ใครโอนเงินมาให้)
+   ส่วนในโหมด Expense จะดึงชื่อ **ผู้รับ** แทน (โอนให้ใคร) — สลิปแบบเดียวกัน แต่อ่านคนละฝั่ง
+   ชุดที่บันทึกแล้วจะมีป้ายกำกับ "income" หรือ "expense" ให้เห็นชัดว่าเป็นชุดไหน
 1. **อัปโหลดสลิป** — ลากและวางภาพ (หรือทั้งโฟลเดอร์) ลงบนพื้นที่อัปโหลด หรือคลิกเพื่อเลือกไฟล์
    แต่ละภาพจะถูก OCR และจัดโครงสร้างด้วย AI โดยอัตโนมัติ อาจใช้เวลา 10-30 วินาทีต่อภาพบน CPU
 2. **ตรวจสอบตาราง** — ตรวจสอบข้อมูลที่ดึงออกมา ชื่อ / วันที่ / เวลา / จำนวนเงิน / โน้ต

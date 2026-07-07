@@ -22,12 +22,20 @@ PERIOD_EXPR = {
 
 
 @router.get("/income-summary")
-def income_summary(period: str = "month", date_from: Optional[str] = None, date_to: Optional[str] = None):
+def income_summary(
+    period: str = "month",
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    transaction_type: Optional[str] = None,
+):
     if period not in PERIOD_EXPR:
         raise HTTPException(400, f"invalid period, must be one of {list(PERIOD_EXPR)}")
 
     clauses = ["amount IS NOT NULL"]
     params: list = []
+    if transaction_type:
+        clauses.append("transaction_type = ?")
+        params.append(transaction_type)
     if date_from:
         clauses.append(f"({BE_DATE_EXPR}) >= ?")
         params.append(date_from)

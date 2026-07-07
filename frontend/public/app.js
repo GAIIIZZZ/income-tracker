@@ -111,6 +111,35 @@ function saveVisibleSlots() {
   localStorage.setItem(VISIBLE_SLOTS_KEY, JSON.stringify(visibleSlots));
 }
 
+// ---------- Mode: Income vs Expense ----------
+const MODE_KEY = "transaction-type";
+let currentTransactionType = localStorage.getItem(MODE_KEY) === "expense" ? "expense" : "income";
+
+function applyModeUI() {
+  document.querySelectorAll(".mode-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === currentTransactionType);
+  });
+  const isExpense = currentTransactionType === "expense";
+  document.getElementById("nameColumnLabel").textContent = isExpense ? "To" : "From";
+  document.getElementById("graphTitle").textContent = isExpense ? "Expenses over time" : "Income over time";
+}
+
+document.querySelectorAll(".mode-btn").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    if (btn.dataset.mode === currentTransactionType) return;
+    currentTransactionType = btn.dataset.mode;
+    localStorage.setItem(MODE_KEY, currentTransactionType);
+    applyModeUI();
+    currentView = "unsaved";
+    currentDraftSlot = 1;
+    await loadSidebar();
+    updateToolbarForView();
+    updateBatchInfoBar();
+    loadTransactions();
+    loadGraph();
+  });
+});
+
 const sidebarList = document.getElementById("sidebarList");
 const workingList = document.getElementById("workingList");
 
@@ -120,7 +149,7 @@ async function loadSidebar() {
 }
 
 async function renderWorkingSlots() {
-  const allUnsaved = await (await fetch("/api/transactions?batch_id=unsaved")).json();
+  const allUnsaved = await (await fetch(`/api/transactions?batch_id=unsaved&transaction_type=${currentTransactionType}`)).json();
   const usedSlots = new Set(allUnsaved.map((t) => t.draft_slot || 1));
   usedSlots.forEach((s) => { if (!visibleSlots.includes(s)) visibleSlots.push(s); });
   if (visibleSlots.length === 0) visibleSlots = [1];
@@ -153,7 +182,7 @@ workingList.addEventListener("click", async (e) => {
     const label = visibleSlots.length > 1 ? `Working Set ${slot}` : "the current working set";
     if (!confirm(`Cancel ${label}? This deletes all its unsaved transactions.`)) return;
 
-    const resp = await fetch(`/api/clear?draft_slot=${slot}`, { method: "POST" });
+    const resp = await fetch(`/api/clear?draft_slot=${slot}&transaction_type=${currentTransactionType}`, { method: "POST" });
     const result = await resp.json();
 
     visibleSlots = visibleSlots.filter((s) => s !== slot);
@@ -200,14 +229,14 @@ document.getElementById("batchSortSelect").addEventListener("change", (e) => {
 });
 
 async function renderSavedBatches() {
-  const resp = await fetch(`/api/batches?sort=${batchSort}`);
+  const resp = await fetch(`/api/batches?sort=${batchSort}&transaction_type=${currentTransactionType}`);
   savedBatchesCache = await resp.json();
 
   sidebarList.innerHTML = savedBatchesCache.map((b) => `
     <li class="sidebar-item${currentView === String(b.id) ? " active" : ""}" data-batch="${b.id}">
       <button class="sidebar-star${b.is_favorite ? " active" : ""}" title="${b.is_favorite ? "Unfavorite" : "Favorite"}">${b.is_favorite ? "&#9733;" : "&#9734;"}</button>
       <span class="sidebar-item-text">
-        <span class="sidebar-item-name">${b.name}</span>
+        <span class="sidebar-item-name">${b.name}</span><span class="batch-type-badge ${b.batch_type}">${b.batch_type}</span>
         <span class="sidebar-item-meta">${b.count} tx &middot; ${formatAmount(b.total)}</span>
       </span>
       <span class="sidebar-item-actions">
@@ -385,6 +414,7 @@ async function uploadSingle(file) {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("draft_slot", String(currentDraftSlot));
+  formData.append("transaction_type", currentTransactionType);
   const resp = await fetch("/api/upload", { method: "POST", body: formData });
   if (!resp.ok) throw new Error(await resp.text());
   return resp.json();
@@ -490,6 +520,7 @@ function imageLink(row) {
 async function loadTransactions() {
   const params = new URLSearchParams();
   params.set("batch_id", currentView);
+  params.set("transaction_type", currentTransactionType);
   if (currentView === "unsaved") params.set("draft_slot", String(currentDraftSlot));
   const search = document.getElementById("searchInput").value.trim();
   const status = document.getElementById("statusFilter").value;
@@ -686,7 +717,7 @@ document.getElementById("addManualBtn").addEventListener("click", async () => {
   await fetch("/api/transactions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ draft_slot: currentDraftSlot }),
+    body: JSON.stringify({ draft_slot: currentDraftSlot, transaction_type: currentTransactionType }),
   });
   loadTransactions();
   loadGraph();
@@ -696,7 +727,7 @@ document.getElementById("addManualBtn").addEventListener("click", async () => {
 document.getElementById("clearBtn").addEventListener("click", async () => {
   if (!confirm("Delete all currently shown (unsaved) transactions? This cannot be undone.")) return;
   const toastId = showToast("Clearing...", { loading: true });
-  const resp = await fetch(`/api/clear?draft_slot=${currentDraftSlot}`, { method: "POST" });
+  const resp = await fetch(`/api/clear?draft_slot=${currentDraftSlot}&transaction_type=${currentTransactionType}`, { method: "POST" });
   const result = await resp.json();
   loadTransactions();
   loadGraph();
@@ -709,7 +740,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
   const resp = await fetch("/api/batches", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ draft_slot: currentDraftSlot }),
+    body: JSON.stringify({ draft_slot: currentDraftSlot, transaction_type: currentTransactionType }),
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
@@ -757,7 +788,7 @@ async function loadGraph() {
   const dateFrom = toBuddhistEra(document.getElementById("graphDateFrom").value);
   const dateTo = toBuddhistEra(document.getElementById("graphDateTo").value);
 
-  const params = new URLSearchParams({ period });
+  const params = new URLSearchParams({ period, transaction_type: currentTransactionType });
   if (dateFrom) params.set("date_from", dateFrom);
   if (dateTo) params.set("date_to", dateTo);
 
@@ -845,7 +876,7 @@ document.getElementById("graphDateTo").addEventListener("change", loadGraph);
 const galleryGrid = document.getElementById("galleryGrid");
 
 async function loadGallery() {
-  const resp = await fetch("/api/transactions?batch_id=all&limit=500");
+  const resp = await fetch(`/api/transactions?batch_id=all&transaction_type=${currentTransactionType}&limit=500`);
   const rows = await resp.json();
   galleryGrid.innerHTML = rows.map((row) => {
     const url = imageUrl(row);
@@ -856,7 +887,7 @@ async function loadGallery() {
       <div class="gallery-card">
         ${url ? `<a href="${url}" target="_blank" rel="noopener">${thumb}</a>` : thumb}
         <div class="gallery-body">
-          <div class="gallery-name">${row.sender_name ?? "(unknown sender)"}</div>
+          <div class="gallery-name">${row.sender_name ?? "(unknown)"}</div>
           <div class="gallery-amount">${formatAmount(row.amount)}</div>
           <div class="gallery-meta">${formatDateDisplay(row.transaction_date)} ${row.transaction_time ?? ""}</div>
         </div>
@@ -1115,6 +1146,7 @@ document.querySelectorAll(".theme-btn").forEach((btn) => {
 applyTheme(localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark");
 
 // ---------- Init ----------
+applyModeUI();
 updateToolbarForView();
 loadSidebar();
 loadTransactions();
