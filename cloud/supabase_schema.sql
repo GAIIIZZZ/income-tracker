@@ -31,3 +31,18 @@ create policy "anon full access" on transactions
 -- Also create a public Storage bucket named "slip-images" from the Supabase dashboard
 -- (Storage -> New bucket -> name: slip-images -> Public bucket: on). That can't be done
 -- from SQL alone.
+--
+-- "Public bucket" only makes reading files public - it does NOT grant upload access.
+-- Storage has its own RLS (on storage.objects), separate from the transactions table's
+-- policy above, so it needs its own policies or every upload fails with a StorageException.
+create policy "anon upload access"
+    on storage.objects
+    for insert
+    to anon
+    with check (bucket_id = 'slip-images');
+
+create policy "anon read access"
+    on storage.objects
+    for select
+    to anon
+    using (bucket_id = 'slip-images');
