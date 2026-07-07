@@ -86,13 +86,30 @@ function dismissToast(id, delay = 4500) {
   }, delay);
 }
 
-// ---------- Tabs ----------
+// ---------- Tabs (Income / Expense / Gallery / Zones) ----------
+// Income and Expense are tabs like any other, but also carry a data-mode - clicking one
+// both switches the visible panel to Transactions AND switches which mode (income/expense)
+// the whole app is scoped to.
 document.querySelectorAll(".tab-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
     document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
     document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+
+    if (btn.dataset.mode && btn.dataset.mode !== currentTransactionType) {
+      currentTransactionType = btn.dataset.mode;
+      localStorage.setItem(MODE_KEY, currentTransactionType);
+      applyModeUI();
+      currentView = "unsaved";
+      currentDraftSlot = 1;
+      await loadSidebar();
+      updateToolbarForView();
+      updateBatchInfoBar();
+      loadTransactions();
+      loadGraph();
+    }
+
     if (btn.dataset.tab === "gallery") loadGallery();
     if (btn.dataset.tab === "zones") loadZoneProfiles();
   });
@@ -112,33 +129,20 @@ function saveVisibleSlots() {
 }
 
 // ---------- Mode: Income vs Expense ----------
+// The Income/Expense tab-btns (see Tabs section above) both switch panels AND set this -
+// this section just holds the shared state + non-tab UI updates (table header, graph title).
 const MODE_KEY = "transaction-type";
 let currentTransactionType = localStorage.getItem(MODE_KEY) === "expense" ? "expense" : "income";
 
 function applyModeUI() {
-  document.querySelectorAll(".mode-btn").forEach((btn) => {
+  // Only the Income/Expense tab-btns carry data-mode, so this only affects those two.
+  document.querySelectorAll(".tab-btn[data-mode]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.mode === currentTransactionType);
   });
   const isExpense = currentTransactionType === "expense";
   document.getElementById("nameColumnLabel").textContent = isExpense ? "To" : "From";
   document.getElementById("graphTitle").textContent = isExpense ? "Expenses over time" : "Income over time";
 }
-
-document.querySelectorAll(".mode-btn").forEach((btn) => {
-  btn.addEventListener("click", async () => {
-    if (btn.dataset.mode === currentTransactionType) return;
-    currentTransactionType = btn.dataset.mode;
-    localStorage.setItem(MODE_KEY, currentTransactionType);
-    applyModeUI();
-    currentView = "unsaved";
-    currentDraftSlot = 1;
-    await loadSidebar();
-    updateToolbarForView();
-    updateBatchInfoBar();
-    loadTransactions();
-    loadGraph();
-  });
-});
 
 const sidebarList = document.getElementById("sidebarList");
 const workingList = document.getElementById("workingList");

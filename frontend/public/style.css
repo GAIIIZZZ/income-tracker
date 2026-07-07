@@ -237,23 +237,8 @@ button.sidebar-add-slot:hover { background: var(--panel-alt); color: var(--text)
 .theme-btn.active { color: var(--text); background: var(--panel-alt); }
 .theme-btn:hover:not(.active) { color: var(--text); }
 
-.mode-switch { display: flex; gap: 6px; background: var(--panel); padding: 4px; border-radius: 8px; }
-
-.mode-btn {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  padding: 7px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.15s;
-}
-
-.mode-btn:hover:not(.active) { color: var(--text); }
-.mode-btn.active[data-mode="income"] { color: var(--ok); background: rgba(62,207,142,0.15); }
-.mode-btn.active[data-mode="expense"] { color: var(--danger); background: rgba(255,92,92,0.15); }
+.tab-btn.active[data-mode="income"] { color: var(--ok); background: rgba(62,207,142,0.15); }
+.tab-btn.active[data-mode="expense"] { color: var(--danger); background: rgba(255,92,92,0.15); }
 
 .batch-type-badge {
   display: inline-block;
