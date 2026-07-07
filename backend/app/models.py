@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class TransactionOut(BaseModel):
     id: int
     batch_id: Optional[int] = None
+    transaction_type: str = "income"
     source_image_path: Optional[str] = None
     processed_image_path: Optional[str] = None
     sender_name: Optional[str] = None
@@ -40,18 +41,21 @@ class TransactionCreate(BaseModel):
     notes: Optional[str] = None
     status: Optional[str] = "corrected"
     draft_slot: Optional[int] = 1
+    transaction_type: Optional[str] = "income"
 
 
 class BatchCreate(BaseModel):
     name: Optional[str] = None
     is_favorite: Optional[bool] = None
     draft_slot: Optional[int] = 1
+    type: Optional[str] = "income"
 
 
 class BatchOut(BaseModel):
     id: int
     name: str
     is_favorite: bool
+    batch_type: str = "income"
     created_at: str
     last_edited: Optional[str] = None
     count: int

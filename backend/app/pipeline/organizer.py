@@ -22,14 +22,14 @@ def _unique_destination(dest_dir: Path, filename: str) -> Path:
     return candidate
 
 
-def run_pipeline(image_path: str, draft_slot: int = 1) -> dict:
+def run_pipeline(image_path: str, draft_slot: int = 1, transaction_type: str = "income") -> dict:
     image_path = str(image_path)
     filename = Path(image_path).name
 
     with get_conn() as conn:
         cur = conn.execute(
-            "INSERT INTO transactions (batch_id, draft_slot, source_image_path, status) VALUES (NULL, ?, ?, 'pending')",
-            (draft_slot, image_path),
+            "INSERT INTO transactions (batch_id, draft_slot, transaction_type, source_image_path, status) VALUES (NULL, ?, ?, ?, 'pending')",
+            (draft_slot, transaction_type, image_path),
         )
         transaction_id = cur.lastrowid
 

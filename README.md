@@ -152,30 +152,38 @@ python -m app.watcher
 
 ## How to use the app once it's running
 
-1. **Upload slips** — drag and drop images (or a whole folder of them) onto the upload
+1. **Choose Income or Expense** — the top tab bar has separate **Income** and
+   **Expense** tabs. Whichever one is active decides how everything you do next
+   (upload, manual add, save, clear) gets tagged — they're kept completely separate
+   (own working sets, own saved batches, own graph) so your income and expenses never
+   mix.
+2. **Upload slips** — drag and drop images (or a whole folder of them) onto the upload
    area, or click it to choose files. Each one gets OCR'd and AI-structured
    automatically; this can take 10-30 seconds per image on CPU.
-2. **Review the table** — check the extracted Name / Date / Time / Amount / Notes.
+3. **Review the table** — check the extracted Name / Date / Time / Amount / Notes.
    Click the pencil icon on a row to edit any field, then confirm or cancel.
-3. **Working sets** — everything you upload lands in "Current (unsaved)" first. Click
+4. **Working sets** — everything you upload lands in "Current (unsaved)" first. Click
    "Add more Set +" in the sidebar if you want a second, independent batch of uploads
    going at the same time (e.g. two different folders).
-4. **Save or Clear** — once a batch of transactions looks right, click **Save
-   Transactions** to lock it in as a named, permanent record (this also re-runs the AI
-   once more as a double-check and flags anything it disagrees with). Click **Clear
-   shown** to throw away the current unsaved batch and start over.
-5. **Saved batches** (left sidebar) — rename, delete, star as favorite, or sort them.
-   Click one to view its transactions read-only-ish (still editable) alongside its
-   saved/last-edited timestamps.
-6. **Gallery tab** — a visual grid of every processed slip's image + extracted details.
-7. **Zones tab** — for better accuracy, calibrate a "zone profile" per bank app: upload
+5. **Save or Clear** — once a batch of transactions looks right, click **Save
+   Income**/**Save Expense** to lock it in as a named, permanent record (this also
+   re-runs the AI once more as a double-check and flags anything it disagrees with).
+   Click **Clear shown** to throw away the current unsaved batch and start over.
+6. **Saved batches** (left sidebar) — each one shows an Income/Expense badge so you
+   always know which kind you're looking at. Rename, delete, star as favorite, or sort
+   them. Click one to view its transactions read-only-ish (still editable) alongside
+   its saved/last-edited timestamps.
+7. **Gallery tab** — a visual grid of every processed slip (income and expense
+   together), with a type filter dropdown and a badge on each card.
+8. **Zones tab** — for better accuracy, calibrate a "zone profile" per bank app: upload
    one sample slip, draw a box around each field (name/date/time/amount), and save.
    Future uploads are matched to it by visual similarity to the sample — no need to
    know or type which bank it is. Export/Import lets you back up or share your
    calibrations as one file; "Save as Default" makes them auto-load for anyone who
    installs this project fresh.
-8. **Graph** — income over time at the bottom of the Transactions tab, filterable by
-   date range and by status (correct / pending / needs review), with a checkbox legend.
+9. **Graph** — income (or expense) over time at the bottom of the active tab,
+   filterable by date range and by status (correct / pending / needs review), with a
+   checkbox legend.
 
 ---
 
@@ -379,26 +387,32 @@ python -m app.watcher
 
 ## วิธีใช้งานแอปหลังจากรันขึ้นมาแล้ว
 
-1. **อัปโหลดสลิป** — ลากและวางภาพ (หรือทั้งโฟลเดอร์) ลงบนพื้นที่อัปโหลด หรือคลิกเพื่อเลือกไฟล์
+1. **เลือกแท็บ Income หรือ Expense** — แถบแท็บด้านบนมีแท็บ **Income** (รายรับ) และ
+   **Expense** (รายจ่าย) แยกกัน แท็บไหนที่เลือกอยู่จะกำหนดว่าสิ่งที่คุณทำต่อไป (อัปโหลด,
+   เพิ่มด้วยมือ, บันทึก, ล้างข้อมูล) จะถูกแท็กเป็นประเภทไหน — ทั้งสองแท็บแยกจากกันโดยสมบูรณ์
+   (มีชุดข้อมูลที่กำลังทำงาน, ชุดที่บันทึกแล้ว, และกราฟเป็นของตัวเอง) เพื่อไม่ให้รายรับกับรายจ่ายปนกัน
+2. **อัปโหลดสลิป** — ลากและวางภาพ (หรือทั้งโฟลเดอร์) ลงบนพื้นที่อัปโหลด หรือคลิกเพื่อเลือกไฟล์
    แต่ละภาพจะถูก OCR และจัดโครงสร้างด้วย AI โดยอัตโนมัติ อาจใช้เวลา 10-30 วินาทีต่อภาพบน CPU
-2. **ตรวจสอบตาราง** — ตรวจสอบข้อมูลที่ดึงออกมา ชื่อ / วันที่ / เวลา / จำนวนเงิน / โน้ต
+3. **ตรวจสอบตาราง** — ตรวจสอบข้อมูลที่ดึงออกมา ชื่อ / วันที่ / เวลา / จำนวนเงิน / โน้ต
    คลิกไอคอนดินสอที่แถวเพื่อแก้ไขค่าใดก็ได้ แล้วกดยืนยันหรือยกเลิก
-3. **ชุดข้อมูลที่กำลังทำงาน (Working sets)** — ทุกอย่างที่อัปโหลดจะเข้าไปอยู่ใน "Current (unsaved)"
+4. **ชุดข้อมูลที่กำลังทำงาน (Working sets)** — ทุกอย่างที่อัปโหลดจะเข้าไปอยู่ใน "Current (unsaved)"
    ก่อน คลิก "Add more Set +" ในแถบด้านข้างถ้าต้องการชุดที่สองแยกต่างหากในเวลาเดียวกัน
    (เช่น อัปโหลดจากสองโฟลเดอร์พร้อมกัน)
-4. **บันทึกหรือล้างข้อมูล (Save/Clear)** — เมื่อรายการดูถูกต้องแล้ว คลิก **Save Transactions**
-   เพื่อบันทึกเป็นชุดถาวรที่ตั้งชื่อได้ (ระบบจะรัน AI ตรวจสอบซ้ำอีกครั้งและแจ้งเตือนหากพบความไม่ตรงกัน)
-   คลิก **Clear shown** เพื่อล้างชุดที่ยังไม่บันทึกทั้งหมดแล้วเริ่มใหม่
-5. **ชุดที่บันทึกแล้ว (แถบด้านข้าง)** — เปลี่ยนชื่อ ลบ ปักดาวรายการโปรด หรือจัดเรียงได้
-   คลิกที่ชุดใดก็ได้เพื่อดูรายการ (ยังแก้ไขได้) พร้อมเวลาที่บันทึกและแก้ไขล่าสุด
-6. **แท็บ Gallery** — แสดงภาพและรายละเอียดของสลิปทุกใบที่ประมวลผลแล้วในรูปแบบกริด
-7. **แท็บ Zones** — เพื่อความแม่นยำที่มากขึ้น ให้ตั้งค่า "Zone Profile" สำหรับแต่ละแอปธนาคาร:
+5. **บันทึกหรือล้างข้อมูล (Save/Clear)** — เมื่อรายการดูถูกต้องแล้ว คลิก **Save Income** หรือ
+   **Save Expense** เพื่อบันทึกเป็นชุดถาวรที่ตั้งชื่อได้ (ระบบจะรัน AI ตรวจสอบซ้ำอีกครั้งและแจ้งเตือน
+   หากพบความไม่ตรงกัน) คลิก **Clear shown** เพื่อล้างชุดที่ยังไม่บันทึกทั้งหมดแล้วเริ่มใหม่
+6. **ชุดที่บันทึกแล้ว (แถบด้านข้าง)** — แต่ละชุดจะมีป้าย Income/Expense บอกประเภทให้เห็นชัดเจน
+   เปลี่ยนชื่อ ลบ ปักดาวรายการโปรด หรือจัดเรียงได้ คลิกที่ชุดใดก็ได้เพื่อดูรายการ (ยังแก้ไขได้)
+   พร้อมเวลาที่บันทึกและแก้ไขล่าสุด
+7. **แท็บ Gallery** — แสดงภาพและรายละเอียดของสลิปทุกใบที่ประมวลผลแล้ว (ทั้งรายรับและรายจ่ายรวมกัน)
+   ในรูปแบบกริด มีตัวกรองประเภทและป้ายกำกับที่การ์ดแต่ละใบ
+8. **แท็บ Zones** — เพื่อความแม่นยำที่มากขึ้น ให้ตั้งค่า "Zone Profile" สำหรับแต่ละแอปธนาคาร:
    อัปโหลดภาพตัวอย่างหนึ่งภาพ วาดกรอบรอบแต่ละช่องข้อมูล (ชื่อ/วันที่/เวลา/จำนวนเงิน) แล้วบันทึก
    การอัปโหลดครั้งต่อไปจะจับคู่โดยอัตโนมัติจากความคล้ายของภาพ — ไม่ต้องระบุว่าเป็นธนาคารอะไร
    ปุ่ม Export/Import ใช้สำรองหรือแชร์ค่าที่ตั้งไว้เป็นไฟล์เดียว ส่วน "Save as Default"
    จะทำให้ค่าเหล่านี้โหลดอัตโนมัติสำหรับการติดตั้งใหม่ทุกครั้ง
-8. **กราฟ** — แสดงรายรับตามช่วงเวลาด้านล่างแท็บ Transactions กรองตามช่วงวันที่และสถานะได้
-   (ถูกต้อง / รอตรวจสอบ / ต้องตรวจสอบ) พร้อมกล่องกาเครื่องหมายเลือกแสดง/ซ่อนแต่ละเส้น
+9. **กราฟ** — แสดงรายรับ (หรือรายจ่าย) ตามช่วงเวลาด้านล่างแท็บที่เลือกอยู่ กรองตามช่วงวันที่และ
+   สถานะได้ (ถูกต้อง / รอตรวจสอบ / ต้องตรวจสอบ) พร้อมกล่องกาเครื่องหมายเลือกแสดง/ซ่อนแต่ละเส้น
 
 ---
 

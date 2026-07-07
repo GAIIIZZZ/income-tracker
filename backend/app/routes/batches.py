@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
@@ -8,7 +10,7 @@ from ..pipeline.recheck import recheck_transaction
 router = APIRouter()
 
 BATCH_SELECT = """
-    SELECT b.id, b.name, b.is_favorite, b.created_at,
+    SELECT b.id, b.name, b.is_favorite, b.batch_type, b.created_at,
            MAX(t.updated_at) as last_edited,
            COUNT(t.id) as count, COALESCE(SUM(t.amount), 0) as total
     FROM batches b
@@ -29,34 +31,43 @@ def _batch_summary(conn, batch_id: int) -> dict:
 
 
 @router.get("/batches")
-def list_batches(sort: str = "favorite"):
+def list_batches(sort: str = "favorite", type: Optional[str] = None):
     order_by = SORT_ORDER.get(sort, SORT_ORDER["favorite"])
+    where = "WHERE b.batch_type = ?" if type else ""
+    params = [type] if type else []
     with get_conn() as conn:
-        rows = conn.execute(f"{BATCH_SELECT} GROUP BY b.id ORDER BY {order_by}").fetchall()
+        rows = conn.execute(
+            f"{BATCH_SELECT} {where} GROUP BY b.id ORDER BY {order_by}", params
+        ).fetchall()
         return [dict(r) for r in rows]
 
 
 @router.post("/batches")
 async def save_batch(payload: BatchCreate):
     draft_slot = payload.draft_slot or 1
+    batch_type = payload.type or "income"
 
     with get_conn() as conn:
         unsaved = conn.execute(
-            "SELECT id FROM transactions WHERE batch_id IS NULL AND draft_slot = ?", (draft_slot,)
+            "SELECT id FROM transactions WHERE batch_id IS NULL AND draft_slot = ? AND transaction_type = ?",
+            (draft_slot, batch_type),
         ).fetchall()
         if not unsaved:
             raise HTTPException(400, "No unsaved transactions to save")
 
         name = payload.name
         if not name:
-            existing_count = conn.execute("SELECT COUNT(*) as c FROM batches").fetchone()["c"]
-            name = f"Save Transactions {existing_count + 1}"
+            existing_count = conn.execute(
+                "SELECT COUNT(*) as c FROM batches WHERE batch_type = ?", (batch_type,)
+            ).fetchone()["c"]
+            label = "Income" if batch_type == "income" else "Expense"
+            name = f"Save {label} {existing_count + 1}"
 
-        cur = conn.execute("INSERT INTO batches (name) VALUES (?)", (name,))
+        cur = conn.execute("INSERT INTO batches (name, batch_type) VALUES (?, ?)", (name, batch_type))
         batch_id = cur.lastrowid
         conn.execute(
-            "UPDATE transactions SET batch_id = ? WHERE batch_id IS NULL AND draft_slot = ?",
-            (batch_id, draft_slot),
+            "UPDATE transactions SET batch_id = ? WHERE batch_id IS NULL AND draft_slot = ? AND transaction_type = ?",
+            (batch_id, draft_slot, batch_type),
         )
 
     with get_conn() as conn:

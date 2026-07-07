@@ -86,6 +86,40 @@ function dismissToast(id, delay = 4500) {
   }, delay);
 }
 
+// ---------- Type (Income / Expense) + per-type state ----------
+let currentType = "income";
+
+function makeTypeState(type) {
+  return {
+    currentView: "unsaved",
+    currentDraftSlot: 1,
+    batchSort: "favorite",
+    savedBatchesCache: [],
+    sortState: { field: null, dir: "asc" },
+    visibleSlots: JSON.parse(localStorage.getItem(`visible-draft-slots-${type}`) || "[1]"),
+  };
+}
+
+const perType = { income: makeTypeState("income"), expense: makeTypeState("expense") };
+
+function ts() {
+  return perType[currentType];
+}
+
+function typeLabel(type = currentType) {
+  return type === "expense" ? "Expense" : "Income";
+}
+
+function saveVisibleSlots() {
+  localStorage.setItem(`visible-draft-slots-${currentType}`, JSON.stringify(ts().visibleSlots));
+}
+
+function updateTypeLabels() {
+  document.getElementById("saveBtn").textContent = `Save ${typeLabel()}`;
+  document.getElementById("graphTitle").textContent = `${typeLabel()} over time`;
+  document.querySelector(".sidebar-header").textContent = `${typeLabel()} Working`;
+}
+
 // ---------- Tabs ----------
 document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -93,23 +127,18 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById(`tab-${btn.dataset.tab}`).classList.add("active");
+    if (btn.dataset.tab === "transactions" && btn.dataset.type) {
+      currentType = btn.dataset.type;
+      updateTypeLabels();
+      updateToolbarForView();
+      loadSidebar();
+      loadTransactions();
+      loadGraph();
+    }
     if (btn.dataset.tab === "gallery") loadGallery();
     if (btn.dataset.tab === "zones") loadZoneProfiles();
   });
 });
-
-// ---------- Sidebar / working slots / saved batches ----------
-let currentView = "unsaved";
-let currentDraftSlot = 1;
-let batchSort = "favorite";
-let savedBatchesCache = [];
-
-const VISIBLE_SLOTS_KEY = "visible-draft-slots";
-let visibleSlots = JSON.parse(localStorage.getItem(VISIBLE_SLOTS_KEY) || "[1]");
-
-function saveVisibleSlots() {
-  localStorage.setItem(VISIBLE_SLOTS_KEY, JSON.stringify(visibleSlots));
-}
 
 const sidebarList = document.getElementById("sidebarList");
 const workingList = document.getElementById("workingList");
@@ -120,18 +149,18 @@ async function loadSidebar() {
 }
 
 async function renderWorkingSlots() {
-  const allUnsaved = await (await fetch("/api/transactions?batch_id=unsaved")).json();
+  const allUnsaved = await (await fetch(`/api/transactions?batch_id=unsaved&type=${currentType}`)).json();
   const usedSlots = new Set(allUnsaved.map((t) => t.draft_slot || 1));
-  usedSlots.forEach((s) => { if (!visibleSlots.includes(s)) visibleSlots.push(s); });
-  if (visibleSlots.length === 0) visibleSlots = [1];
-  visibleSlots.sort((a, b) => a - b);
+  usedSlots.forEach((s) => { if (!ts().visibleSlots.includes(s)) ts().visibleSlots.push(s); });
+  if (ts().visibleSlots.length === 0) ts().visibleSlots = [1];
+  ts().visibleSlots.sort((a, b) => a - b);
   saveVisibleSlots();
 
-  if (!visibleSlots.includes(currentDraftSlot)) currentDraftSlot = visibleSlots[0];
+  if (!ts().visibleSlots.includes(ts().currentDraftSlot)) ts().currentDraftSlot = ts().visibleSlots[0];
 
-  workingList.innerHTML = visibleSlots.map((slot) => {
-    const isActive = currentView === "unsaved" && currentDraftSlot === slot;
-    const label = visibleSlots.length > 1 ? `Working Set ${slot}` : "Current (unsaved)";
+  workingList.innerHTML = ts().visibleSlots.map((slot) => {
+    const isActive = ts().currentView === "unsaved" && ts().currentDraftSlot === slot;
+    const label = ts().visibleSlots.length > 1 ? `Working Set ${slot}` : "Current (unsaved)";
     return `
       <li class="sidebar-item${isActive ? " active" : ""}" data-slot="${slot}">
         <span class="sidebar-item-text"><span class="sidebar-item-name">${label}</span></span>
@@ -150,16 +179,16 @@ workingList.addEventListener("click", async (e) => {
   const deleteBtn = e.target.closest(".working-delete-btn");
   if (deleteBtn) {
     const slot = Number(deleteBtn.dataset.slot);
-    const label = visibleSlots.length > 1 ? `Working Set ${slot}` : "the current working set";
+    const label = ts().visibleSlots.length > 1 ? `Working Set ${slot}` : "the current working set";
     if (!confirm(`Cancel ${label}? This deletes all its unsaved transactions.`)) return;
 
-    const resp = await fetch(`/api/clear?draft_slot=${slot}`, { method: "POST" });
+    const resp = await fetch(`/api/clear?draft_slot=${slot}&type=${currentType}`, { method: "POST" });
     const result = await resp.json();
 
-    visibleSlots = visibleSlots.filter((s) => s !== slot);
-    if (visibleSlots.length === 0) visibleSlots = [1];
+    ts().visibleSlots = ts().visibleSlots.filter((s) => s !== slot);
+    if (ts().visibleSlots.length === 0) ts().visibleSlots = [1];
     saveVisibleSlots();
-    if (currentDraftSlot === slot) currentDraftSlot = visibleSlots[0];
+    if (ts().currentDraftSlot === slot) ts().currentDraftSlot = ts().visibleSlots[0];
 
     await renderWorkingSlots();
     updateToolbarForView();
@@ -170,8 +199,8 @@ workingList.addEventListener("click", async (e) => {
     return;
   }
 
-  currentView = "unsaved";
-  currentDraftSlot = Number(li.dataset.slot);
+  ts().currentView = "unsaved";
+  ts().currentDraftSlot = Number(li.dataset.slot);
   document.querySelectorAll(".sidebar-item").forEach((el) => el.classList.remove("active"));
   li.classList.add("active");
   updateToolbarForView();
@@ -181,11 +210,11 @@ workingList.addEventListener("click", async (e) => {
 });
 
 document.getElementById("addSecondSlotBtn").addEventListener("click", async () => {
-  const nextSlot = visibleSlots.length ? Math.max(...visibleSlots) + 1 : 1;
-  visibleSlots.push(nextSlot);
+  const nextSlot = ts().visibleSlots.length ? Math.max(...ts().visibleSlots) + 1 : 1;
+  ts().visibleSlots.push(nextSlot);
   saveVisibleSlots();
-  currentView = "unsaved";
-  currentDraftSlot = nextSlot;
+  ts().currentView = "unsaved";
+  ts().currentDraftSlot = nextSlot;
   await renderWorkingSlots();
   updateToolbarForView();
   updateBatchInfoBar();
@@ -195,20 +224,23 @@ document.getElementById("addSecondSlotBtn").addEventListener("click", async () =
 });
 
 document.getElementById("batchSortSelect").addEventListener("change", (e) => {
-  batchSort = e.target.value;
+  ts().batchSort = e.target.value;
   renderSavedBatches();
 });
 
 async function renderSavedBatches() {
-  const resp = await fetch(`/api/batches?sort=${batchSort}`);
-  savedBatchesCache = await resp.json();
+  const resp = await fetch(`/api/batches?sort=${ts().batchSort}&type=${currentType}`);
+  ts().savedBatchesCache = await resp.json();
 
-  sidebarList.innerHTML = savedBatchesCache.map((b) => `
-    <li class="sidebar-item${currentView === String(b.id) ? " active" : ""}" data-batch="${b.id}">
+  sidebarList.innerHTML = ts().savedBatchesCache.map((b) => `
+    <li class="sidebar-item${ts().currentView === String(b.id) ? " active" : ""}" data-batch="${b.id}">
       <button class="sidebar-star${b.is_favorite ? " active" : ""}" title="${b.is_favorite ? "Unfavorite" : "Favorite"}">${b.is_favorite ? "&#9733;" : "&#9734;"}</button>
       <span class="sidebar-item-text">
         <span class="sidebar-item-name">${b.name}</span>
-        <span class="sidebar-item-meta">${b.count} tx &middot; ${formatAmount(b.total)}</span>
+        <span class="sidebar-item-meta">
+          <span class="badge-type badge-${b.batch_type}">${typeLabel(b.batch_type)}</span>
+          ${b.count} tx &middot; ${formatAmount(b.total)}
+        </span>
       </span>
       <span class="sidebar-item-actions">
         <button class="sidebar-rename-btn" title="Rename">&#9998;</button>
@@ -229,7 +261,7 @@ sidebarList.addEventListener("click", async (e) => {
   const deleteBtn = e.target.closest(".sidebar-delete-btn");
 
   if (starBtn) {
-    const batch = savedBatchesCache.find((b) => String(b.id) === li.dataset.batch);
+    const batch = ts().savedBatchesCache.find((b) => String(b.id) === li.dataset.batch);
     await fetch(`/api/batches/${li.dataset.batch}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -258,7 +290,7 @@ sidebarList.addEventListener("click", async (e) => {
     const currentName = li.querySelector(".sidebar-item-name").textContent;
     if (!confirm(`Delete "${currentName}" and all its transactions? This cannot be undone.`)) return;
     await fetch(`/api/batches/${li.dataset.batch}`, { method: "DELETE" });
-    if (currentView === li.dataset.batch) currentView = "unsaved";
+    if (ts().currentView === li.dataset.batch) ts().currentView = "unsaved";
     showToast(`Deleted "${currentName}".`);
     updateToolbarForView();
     loadSidebar();
@@ -267,7 +299,7 @@ sidebarList.addEventListener("click", async (e) => {
     return;
   }
 
-  currentView = li.dataset.batch;
+  ts().currentView = li.dataset.batch;
   document.querySelectorAll(".sidebar-item").forEach((el) => el.classList.remove("active"));
   li.classList.add("active");
   updateToolbarForView();
@@ -277,7 +309,7 @@ sidebarList.addEventListener("click", async (e) => {
 
 function updateBatchInfoBar() {
   const bar = document.getElementById("batchInfoBar");
-  const batch = savedBatchesCache.find((b) => String(b.id) === currentView);
+  const batch = ts().savedBatchesCache.find((b) => String(b.id) === ts().currentView);
   if (!batch) {
     bar.hidden = true;
     return;
@@ -288,7 +320,7 @@ function updateBatchInfoBar() {
 }
 
 function updateToolbarForView() {
-  const showWorkingControls = currentView === "unsaved";
+  const showWorkingControls = ts().currentView === "unsaved";
   document.getElementById("saveBtn").hidden = !showWorkingControls;
   document.getElementById("clearBtn").hidden = !showWorkingControls;
   document.getElementById("addManualBtn").hidden = !showWorkingControls;
@@ -384,7 +416,8 @@ folderInput.addEventListener("change", () => {
 async function uploadSingle(file) {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("draft_slot", String(currentDraftSlot));
+  formData.append("draft_slot", String(ts().currentDraftSlot));
+  formData.append("transaction_type", currentType);
   const resp = await fetch("/api/upload", { method: "POST", body: formData });
   if (!resp.ok) throw new Error(await resp.text());
   return resp.json();
@@ -397,8 +430,8 @@ async function runBatchUpload(files) {
   const batchSummary = document.getElementById("batchSummary");
   const batchDismiss = document.getElementById("batchDismiss");
 
-  currentView = "unsaved";
-  document.querySelectorAll(".sidebar-item").forEach((el) => el.classList.toggle("active", el.dataset.slot === String(currentDraftSlot)));
+  ts().currentView = "unsaved";
+  document.querySelectorAll(".sidebar-item").forEach((el) => el.classList.toggle("active", el.dataset.slot === String(ts().currentDraftSlot)));
   updateToolbarForView();
   updateBatchInfoBar();
 
@@ -468,7 +501,6 @@ document.getElementById("batchDismiss").addEventListener("click", () => {
 // ---------- Transactions ----------
 const txBody = document.getElementById("txBody");
 let currentRows = [];
-let sortState = { field: null, dir: "asc" };
 let editingRowId = null;
 
 function escapeAttr(v) {
@@ -489,8 +521,9 @@ function imageLink(row) {
 
 async function loadTransactions() {
   const params = new URLSearchParams();
-  params.set("batch_id", currentView);
-  if (currentView === "unsaved") params.set("draft_slot", String(currentDraftSlot));
+  params.set("batch_id", ts().currentView);
+  params.set("type", currentType);
+  if (ts().currentView === "unsaved") params.set("draft_slot", String(ts().currentDraftSlot));
   const search = document.getElementById("searchInput").value.trim();
   const status = document.getElementById("statusFilter").value;
   if (search) params.set("search", search);
@@ -502,8 +535,8 @@ async function loadTransactions() {
 }
 
 function sortedRows() {
-  if (!sortState.field) return currentRows;
-  const { field, dir } = sortState;
+  if (!ts().sortState.field) return currentRows;
+  const { field, dir } = ts().sortState;
   const mult = dir === "asc" ? 1 : -1;
   return [...currentRows].sort((a, b) => {
     if (field === "amount") {
@@ -522,7 +555,7 @@ function sortedRows() {
 function updateSortIndicators() {
   document.querySelectorAll(".sort-btn").forEach((btn) => {
     const indicator = btn.querySelector(".sort-indicator");
-    indicator.textContent = btn.dataset.sort === sortState.field ? (sortState.dir === "asc" ? "▲" : "▼") : "";
+    indicator.textContent = btn.dataset.sort === ts().sortState.field ? (ts().sortState.dir === "asc" ? "▲" : "▼") : "";
   });
 }
 
@@ -601,10 +634,10 @@ function renderTransactions() {
 document.querySelectorAll(".sort-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const field = btn.dataset.sort;
-    if (sortState.field === field) {
-      sortState.dir = sortState.dir === "asc" ? "desc" : "asc";
+    if (ts().sortState.field === field) {
+      ts().sortState.dir = ts().sortState.dir === "asc" ? "desc" : "asc";
     } else {
-      sortState = { field, dir: "asc" };
+      ts().sortState = { field, dir: "asc" };
     }
     editingRowId = null;
     renderTransactions();
@@ -686,7 +719,7 @@ document.getElementById("addManualBtn").addEventListener("click", async () => {
   await fetch("/api/transactions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ draft_slot: currentDraftSlot }),
+    body: JSON.stringify({ draft_slot: ts().currentDraftSlot, transaction_type: currentType }),
   });
   loadTransactions();
   loadGraph();
@@ -696,7 +729,7 @@ document.getElementById("addManualBtn").addEventListener("click", async () => {
 document.getElementById("clearBtn").addEventListener("click", async () => {
   if (!confirm("Delete all currently shown (unsaved) transactions? This cannot be undone.")) return;
   const toastId = showToast("Clearing...", { loading: true });
-  const resp = await fetch(`/api/clear?draft_slot=${currentDraftSlot}`, { method: "POST" });
+  const resp = await fetch(`/api/clear?draft_slot=${ts().currentDraftSlot}&type=${currentType}`, { method: "POST" });
   const result = await resp.json();
   loadTransactions();
   loadGraph();
@@ -709,7 +742,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
   const resp = await fetch("/api/batches", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ draft_slot: currentDraftSlot }),
+    body: JSON.stringify({ draft_slot: ts().currentDraftSlot, type: currentType }),
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
@@ -723,8 +756,8 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
   const flaggedCount = flagged.filter((r) => r.recheck_status === "mismatch").length;
 
   await loadSidebar();
-  currentView = "unsaved";
-  document.querySelectorAll(".sidebar-item").forEach((el) => el.classList.toggle("active", el.dataset.slot === String(currentDraftSlot)));
+  ts().currentView = "unsaved";
+  document.querySelectorAll(".sidebar-item").forEach((el) => el.classList.toggle("active", el.dataset.slot === String(ts().currentDraftSlot)));
   updateBatchInfoBar();
   loadTransactions();
   loadGraph();
@@ -757,7 +790,7 @@ async function loadGraph() {
   const dateFrom = toBuddhistEra(document.getElementById("graphDateFrom").value);
   const dateTo = toBuddhistEra(document.getElementById("graphDateTo").value);
 
-  const params = new URLSearchParams({ period });
+  const params = new URLSearchParams({ period, type: currentType });
   if (dateFrom) params.set("date_from", dateFrom);
   if (dateTo) params.set("date_to", dateTo);
 
@@ -845,7 +878,10 @@ document.getElementById("graphDateTo").addEventListener("change", loadGraph);
 const galleryGrid = document.getElementById("galleryGrid");
 
 async function loadGallery() {
-  const resp = await fetch("/api/transactions?batch_id=all&limit=500");
+  const typeFilter = document.getElementById("galleryTypeFilter").value;
+  const params = new URLSearchParams({ batch_id: "all", limit: "500" });
+  if (typeFilter) params.set("type", typeFilter);
+  const resp = await fetch(`/api/transactions?${params.toString()}`);
   const rows = await resp.json();
   galleryGrid.innerHTML = rows.map((row) => {
     const url = imageUrl(row);
@@ -856,7 +892,10 @@ async function loadGallery() {
       <div class="gallery-card">
         ${url ? `<a href="${url}" target="_blank" rel="noopener">${thumb}</a>` : thumb}
         <div class="gallery-body">
-          <div class="gallery-name">${row.sender_name ?? "(unknown sender)"}</div>
+          <div class="gallery-name">
+            <span class="badge-type badge-${row.transaction_type}">${typeLabel(row.transaction_type)}</span>
+            ${row.sender_name ?? "(unknown sender)"}
+          </div>
           <div class="gallery-amount">${formatAmount(row.amount)}</div>
           <div class="gallery-meta">${formatDateDisplay(row.transaction_date)} ${row.transaction_time ?? ""}</div>
         </div>
@@ -866,6 +905,7 @@ async function loadGallery() {
 }
 
 document.getElementById("refreshGalleryBtn").addEventListener("click", loadGallery);
+document.getElementById("galleryTypeFilter").addEventListener("change", loadGallery);
 
 // ---------- Zone profiles ----------
 const ZONE_FIELD_LABELS = {
@@ -1115,6 +1155,7 @@ document.querySelectorAll(".theme-btn").forEach((btn) => {
 applyTheme(localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark");
 
 // ---------- Init ----------
+updateTypeLabels();
 updateToolbarForView();
 loadSidebar();
 loadTransactions();

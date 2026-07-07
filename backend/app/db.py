@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS batches (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     is_favorite INTEGER NOT NULL DEFAULT 0,
+    batch_type TEXT NOT NULL DEFAULT 'income',
     created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     batch_id INTEGER REFERENCES batches(id) ON DELETE CASCADE,
     draft_slot INTEGER DEFAULT 1,
+    transaction_type TEXT NOT NULL DEFAULT 'income',
     source_image_path TEXT,
     processed_image_path TEXT,
     sender_name TEXT,
@@ -59,6 +61,8 @@ MIGRATIONS = [
     "ALTER TABLE transactions ADD COLUMN draft_slot INTEGER DEFAULT 1",
     "ALTER TABLE batches ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE zone_profiles ADD COLUMN image_hash TEXT",
+    "ALTER TABLE transactions ADD COLUMN transaction_type TEXT NOT NULL DEFAULT 'income'",
+    "ALTER TABLE batches ADD COLUMN batch_type TEXT NOT NULL DEFAULT 'income'",
 ]
 
 

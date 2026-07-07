@@ -161,6 +161,19 @@ button.sidebar-add-slot:hover { background: var(--panel-alt); color: var(--text)
 .sidebar-item-meta { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 .sidebar-item.active .sidebar-item-meta { color: var(--accent); opacity: 0.8; }
 
+.badge-type {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-right: 6px;
+}
+.badge-type.badge-income { background: rgba(62,207,142,0.15); color: var(--ok); }
+.badge-type.badge-expense { background: rgba(255,92,92,0.15); color: var(--danger); }
+
 .sidebar-item-actions {
   display: flex;
   gap: 2px;
