@@ -104,6 +104,8 @@ def _editable_table(rows, key):
         use_container_width=True,
         key=f"edit_{key}",
     )
+    total = pd.to_numeric(edited["amount"], errors="coerce").sum()
+    st.markdown(f"**Total: ฿{total:,.2f}**")
     if st.button("Save edits", key=f"save_{key}"):
         changes = 0
         for _, row in edited.iterrows():
@@ -232,6 +234,8 @@ with tab_saved:
             ] if rows else pd.DataFrame(columns=["sender_name", "transaction_date", "transaction_time", "amount", "status"]),
             use_container_width=True,
         )
+        total = sum(r["amount"] for r in rows if r.get("amount") is not None)
+        st.markdown(f"**Total: ฿{total:,.2f}**")
 
 with tab_chart:
     all_rows = db.list_all_saved_transactions()
