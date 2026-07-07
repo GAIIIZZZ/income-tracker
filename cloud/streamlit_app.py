@@ -11,6 +11,7 @@ canvas-drawing UI that doesn't have a simple Streamlit equivalent) - extraction 
 OCR + the LLM prompt only. See cloud/README.md for setup and deploy steps.
 """
 
+import re
 import tempfile
 from pathlib import Path
 
@@ -41,6 +42,24 @@ if "active_slot" not in st.session_state:
     st.session_state.active_slot = 1
 
 STATUS_OPTIONS = ["pending", "needs_review"]
+
+_DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
+
+
+def _parse_transaction_date(date_str):
+    """transaction_date is stored as Buddhist Era 'YYYY-MM-DD' (per pipeline.py's prompt) -
+    pandas Timestamp can't hold years past ~2262, so convert to Gregorian first or every BE
+    date (2568, 2569, ...) silently becomes NaT via pd.to_datetime(errors="coerce")."""
+    match = _DATE_RE.match(str(date_str or "").strip())
+    if not match:
+        return pd.NaT
+    year, month, day = int(match.group(1)), int(match.group(2)), int(match.group(3))
+    if year >= 2400:
+        year -= 543
+    try:
+        return pd.Timestamp(year=year, month=month, day=day)
+    except ValueError:
+        return pd.NaT
 
 st.title("Income Tracker — Cloud")
 st.caption(
@@ -221,26 +240,29 @@ with tab_chart:
     else:
         chart_df = pd.DataFrame(all_rows)
         chart_df = chart_df.dropna(subset=["transaction_date", "amount"])
-        chart_df["transaction_date"] = pd.to_datetime(chart_df["transaction_date"], errors="coerce")
+        chart_df["transaction_date"] = chart_df["transaction_date"].apply(_parse_transaction_date)
         chart_df = chart_df.dropna(subset=["transaction_date"])
 
-        min_date, max_date = chart_df["transaction_date"].min(), chart_df["transaction_date"].max()
-        date_range = st.date_input(
-            "Date range", value=(min_date.date(), max_date.date()),
-            min_value=min_date.date(), max_value=max_date.date(),
-        )
-        status_filter = st.multiselect("Status", STATUS_OPTIONS, default=STATUS_OPTIONS, key="chart_status")
-
-        filtered = chart_df[chart_df["status"].isin(status_filter)]
-        if isinstance(date_range, tuple) and len(date_range) == 2:
-            start, end = date_range
-            filtered = filtered[
-                (filtered["transaction_date"].dt.date >= start) & (filtered["transaction_date"].dt.date <= end)
-            ]
-
-        if filtered.empty:
-            st.info("No data in this range/filter.")
+        if chart_df.empty:
+            st.info("No transactions with a valid, parseable date yet.")
         else:
-            daily = filtered.groupby(filtered["transaction_date"].dt.date)["amount"].sum()
-            st.line_chart(daily)
-            st.metric("Total in range", f"฿{filtered['amount'].sum():,.2f}")
+            min_date, max_date = chart_df["transaction_date"].min(), chart_df["transaction_date"].max()
+            date_range = st.date_input(
+                "Date range", value=(min_date.date(), max_date.date()),
+                min_value=min_date.date(), max_value=max_date.date(),
+            )
+            status_filter = st.multiselect("Status", STATUS_OPTIONS, default=STATUS_OPTIONS, key="chart_status")
+
+            filtered = chart_df[chart_df["status"].isin(status_filter)]
+            if isinstance(date_range, tuple) and len(date_range) == 2:
+                start, end = date_range
+                filtered = filtered[
+                    (filtered["transaction_date"].dt.date >= start) & (filtered["transaction_date"].dt.date <= end)
+                ]
+
+            if filtered.empty:
+                st.info("No data in this range/filter.")
+            else:
+                daily = filtered.groupby(filtered["transaction_date"].dt.date)["amount"].sum()
+                st.line_chart(daily)
+                st.metric("Total in range", f"฿{filtered['amount'].sum():,.2f}")
