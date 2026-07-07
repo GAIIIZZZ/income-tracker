@@ -967,7 +967,9 @@ document.getElementById("zoneProfileList").addEventListener("click", async (e) =
 document.getElementById("newZoneProfileBtn").addEventListener("click", () => {
   currentZones = {};
   zoneSampleFile = null;
-  document.getElementById("zoneProfileName").value = "";
+  const nameInput = document.getElementById("zoneProfileName");
+  nameInput.value = `${typeLabel()} - `;
+  nameInput.setSelectionRange(nameInput.value.length, nameInput.value.length);
   document.getElementById("zoneProfileKeywords").value = "";
   document.getElementById("zoneSampleFileName").textContent = "";
   document.getElementById("zoneSampleImg").removeAttribute("src");
