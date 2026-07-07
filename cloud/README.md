@@ -19,6 +19,22 @@ it doesn't replace it.
 Use this if you want a link you or friends can open in a browser with nothing installed
 locally. Use the local app if you want everything 100% private with zero external accounts.
 
+**Feature parity with the local app:**
+- Gallery tab (visual grid of processed slips)
+- Saved batches: rename, delete, favorite (⭐)
+- Multiple concurrent "draft sets" (+ Add another set), matching the local app's working sets
+- Status filtering (pending / needs review) on both the review table and the saved view
+- Income graph filterable by date range and status
+- Basic theming matching the local app's dark color palette (`.streamlit/config.toml`)
+
+**Still not included:** Zone Profile calibration (the custom canvas-drawing tool for
+calibrating exact crop regions per bank app) — no simple Streamlit equivalent for that yet.
+
+> **If you deployed an earlier version of this app**, re-run the updated
+> `supabase_schema.sql` in Supabase's SQL Editor before pulling the new code — it adds a
+> `batches` table and a `draft_slot` column. It's written to be safe to re-run (uses
+> `IF NOT EXISTS` / `DROP POLICY IF EXISTS`), so it won't touch your existing data.
+
 ---
 
 ## 1. Create a free Supabase project

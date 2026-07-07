@@ -1,0 +1,10 @@
+# Theme matching the local app's dashboard colors (frontend/public/style.css dark theme),
+# so the cloud version at least shares a color identity even though Streamlit controls the
+# actual layout/components.
+[theme]
+base = "dark"
+primaryColor = "#4f8cff"
+backgroundColor = "#0b0d11"
+secondaryBackgroundColor = "#151920"
+textColor = "#e8ebf1"
+font = "sans serif"
