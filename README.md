@@ -217,25 +217,31 @@ independent build — it doesn't replace or require the local app.
 4. **Working sets** — everything you upload lands in "Current (unsaved)" first. Click
    "Add more Set +" in the sidebar if you want a second, independent batch of uploads
    going at the same time (e.g. two different folders).
-5. **Save or Clear** — once a batch of transactions looks right, click **Save
+5. **Import/Export to Excel** — **Export to Excel** downloads whatever you're currently
+   viewing (the active working set, a selected saved batch, or Gallery's "All") as a
+   formatted `.xlsx` file. **Import from Excel** reads a `.xlsx` back in as new unsaved
+   transactions — it understands the same column layout the export produces (Date,
+   Time, Name, Amount, Notes, Status, Type), so exporting, editing in Excel, and
+   re-importing round-trips cleanly; rows just need a valid Amount to be imported.
+6. **Save or Clear** — once a batch of transactions looks right, click **Save
    Income**/**Save Expense** to lock it in as a named, permanent record (this also
    re-runs the AI once more as a double-check and flags anything it disagrees with).
    Click **Clear shown** to throw away the current unsaved batch and start over.
-6. **Saved batches** (left sidebar) — each one shows an Income/Expense badge so you
+7. **Saved batches** (left sidebar) — each one shows an Income/Expense badge so you
    always know which kind you're looking at. Rename, delete, star as favorite, or sort
    them. Click one to view its transactions read-only-ish (still editable) alongside
    its saved/last-edited timestamps.
-7. **Gallery tab** — a visual grid of every processed slip (income and expense
+8. **Gallery tab** — a visual grid of every processed slip (income and expense
    together), with a type filter dropdown and a badge on each card.
-8. **Zones tab** — for better accuracy, calibrate a "zone profile" per bank app: upload
+9. **Zones tab** — for better accuracy, calibrate a "zone profile" per bank app: upload
    one sample slip, draw a box around each field (name/date/time/amount), and save.
    Future uploads are matched to it by visual similarity to the sample — no need to
    know or type which bank it is. Export/Import lets you back up or share your
    calibrations as one file; "Save as Default" makes them auto-load for anyone who
    installs this project fresh.
-9. **Graph** — income (or expense) over time at the bottom of the active tab,
-   filterable by date range and by status (correct / pending / needs review), with a
-   checkbox legend.
+10. **Graph** — income (or expense) over time at the bottom of the active tab,
+    filterable by date range and by status (correct / pending / needs review), with a
+    checkbox legend.
 
 ---
 
@@ -505,21 +511,27 @@ private 100% เหมือนแอปเวอร์ชัน local อีก
 4. **ชุดข้อมูลที่กำลังทำงาน (Working sets)** — ทุกอย่างที่อัปโหลดจะเข้าไปอยู่ใน "Current (unsaved)"
    ก่อน คลิก "Add more Set +" ในแถบด้านข้างถ้าต้องการชุดที่สองแยกต่างหากในเวลาเดียวกัน
    (เช่น อัปโหลดจากสองโฟลเดอร์พร้อมกัน)
-5. **บันทึกหรือล้างข้อมูล (Save/Clear)** — เมื่อรายการดูถูกต้องแล้ว คลิก **Save Income** หรือ
+5. **นำเข้า/ส่งออกเป็น Excel** — **Export to Excel** จะดาวน์โหลดสิ่งที่คุณกำลังดูอยู่ (ชุดข้อมูลที่
+   กำลังทำงาน, ชุดที่บันทึกไว้ที่เลือก, หรือ "All" ในแท็บ Gallery) เป็นไฟล์ `.xlsx` ที่จัดรูปแบบไว้แล้ว
+   ส่วน **Import from Excel** จะอ่านไฟล์ `.xlsx` กลับเข้ามาเป็นรายการที่ยังไม่บันทึกใหม่ — รู้จัก
+   คอลัมน์แบบเดียวกับที่ export ออกไป (Date, Time, Name, Amount, Notes, Status, Type) ดังนั้นการ
+   export แล้วแก้ไขใน Excel แล้ว import กลับเข้ามาจึงทำงานได้ครบวงจร แต่ละแถวแค่ต้องมี Amount
+   ที่ถูกต้องจึงจะถูกนำเข้า
+6. **บันทึกหรือล้างข้อมูล (Save/Clear)** — เมื่อรายการดูถูกต้องแล้ว คลิก **Save Income** หรือ
    **Save Expense** เพื่อบันทึกเป็นชุดถาวรที่ตั้งชื่อได้ (ระบบจะรัน AI ตรวจสอบซ้ำอีกครั้งและแจ้งเตือน
    หากพบความไม่ตรงกัน) คลิก **Clear shown** เพื่อล้างชุดที่ยังไม่บันทึกทั้งหมดแล้วเริ่มใหม่
-6. **ชุดที่บันทึกแล้ว (แถบด้านข้าง)** — แต่ละชุดจะมีป้าย Income/Expense บอกประเภทให้เห็นชัดเจน
+7. **ชุดที่บันทึกแล้ว (แถบด้านข้าง)** — แต่ละชุดจะมีป้าย Income/Expense บอกประเภทให้เห็นชัดเจน
    เปลี่ยนชื่อ ลบ ปักดาวรายการโปรด หรือจัดเรียงได้ คลิกที่ชุดใดก็ได้เพื่อดูรายการ (ยังแก้ไขได้)
    พร้อมเวลาที่บันทึกและแก้ไขล่าสุด
-7. **แท็บ Gallery** — แสดงภาพและรายละเอียดของสลิปทุกใบที่ประมวลผลแล้ว (ทั้งรายรับและรายจ่ายรวมกัน)
+8. **แท็บ Gallery** — แสดงภาพและรายละเอียดของสลิปทุกใบที่ประมวลผลแล้ว (ทั้งรายรับและรายจ่ายรวมกัน)
    ในรูปแบบกริด มีตัวกรองประเภทและป้ายกำกับที่การ์ดแต่ละใบ
-8. **แท็บ Zones** — เพื่อความแม่นยำที่มากขึ้น ให้ตั้งค่า "Zone Profile" สำหรับแต่ละแอปธนาคาร:
+9. **แท็บ Zones** — เพื่อความแม่นยำที่มากขึ้น ให้ตั้งค่า "Zone Profile" สำหรับแต่ละแอปธนาคาร:
    อัปโหลดภาพตัวอย่างหนึ่งภาพ วาดกรอบรอบแต่ละช่องข้อมูล (ชื่อ/วันที่/เวลา/จำนวนเงิน) แล้วบันทึก
    การอัปโหลดครั้งต่อไปจะจับคู่โดยอัตโนมัติจากความคล้ายของภาพ — ไม่ต้องระบุว่าเป็นธนาคารอะไร
    ปุ่ม Export/Import ใช้สำรองหรือแชร์ค่าที่ตั้งไว้เป็นไฟล์เดียว ส่วน "Save as Default"
    จะทำให้ค่าเหล่านี้โหลดอัตโนมัติสำหรับการติดตั้งใหม่ทุกครั้ง
-9. **กราฟ** — แสดงรายรับ (หรือรายจ่าย) ตามช่วงเวลาด้านล่างแท็บที่เลือกอยู่ กรองตามช่วงวันที่และ
-   สถานะได้ (ถูกต้อง / รอตรวจสอบ / ต้องตรวจสอบ) พร้อมกล่องกาเครื่องหมายเลือกแสดง/ซ่อนแต่ละเส้น
+10. **กราฟ** — แสดงรายรับ (หรือรายจ่าย) ตามช่วงเวลาด้านล่างแท็บที่เลือกอยู่ กรองตามช่วงวันที่และ
+    สถานะได้ (ถูกต้อง / รอตรวจสอบ / ต้องตรวจสอบ) พร้อมกล่องกาเครื่องหมายเลือกแสดง/ซ่อนแต่ละเส้น
 
 ---
 
