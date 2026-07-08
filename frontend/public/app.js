@@ -710,6 +710,57 @@ async function patchTransaction(id, fields) {
 }
 
 document.getElementById("refreshBtn").addEventListener("click", () => { loadTransactions(); loadSidebar(); loadGraph(); });
+
+document.getElementById("exportExcelBtn").addEventListener("click", () => {
+  const params = new URLSearchParams();
+  params.set("batch_id", ts().currentView);
+  params.set("type", currentType);
+  if (ts().currentView === "unsaved") params.set("draft_slot", String(ts().currentDraftSlot));
+  const search = document.getElementById("searchInput").value.trim();
+  const status = document.getElementById("statusFilter").value;
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+  window.location.href = `/api/export?${params.toString()}`;
+});
+
+document.getElementById("importExcelBtn").addEventListener("click", () => {
+  document.getElementById("excelImportInput").click();
+});
+
+document.getElementById("excelImportInput").addEventListener("change", async () => {
+  const input = document.getElementById("excelImportInput");
+  const file = input.files[0];
+  input.value = "";
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("draft_slot", String(ts().currentDraftSlot));
+  formData.append("type", currentType);
+
+  const toastId = showToast("Importing from Excel...", { loading: true });
+  const resp = await fetch("/api/import", { method: "POST", body: formData });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    updateToast(toastId, err.detail || "Import failed.", { success: false });
+    return;
+  }
+  const result = await resp.json();
+
+  ts().currentView = "unsaved";
+  updateToolbarForView();
+  await loadSidebar();
+  document.querySelectorAll(".sidebar-item").forEach((el) => el.classList.toggle("active", el.dataset.slot === String(ts().currentDraftSlot)));
+  updateBatchInfoBar();
+  loadTransactions();
+  loadGraph();
+
+  updateToast(
+    toastId,
+    `Imported ${result.imported} transaction(s)` + (result.skipped ? `, skipped ${result.skipped} row(s) with no valid amount.` : "."),
+    { success: true }
+  );
+});
 document.getElementById("searchInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") loadTransactions();
 });

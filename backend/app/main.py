@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import NEEDS_REVIEW_DIR, PROCESSED_DIR, UPLOAD_STAGING_DIR, ZONE_SAMPLES_DIR
 from .db import init_db
-from .routes import batches, clear, summary, transactions, upload, zone_profiles
+from .routes import batches, clear, excel, summary, transactions, upload, zone_profiles
 
 app = FastAPI(title="Receipt OCR Tracker")
 
@@ -31,6 +31,7 @@ app.include_router(batches.router, prefix="/api")
 app.include_router(clear.router, prefix="/api")
 app.include_router(summary.router, prefix="/api")
 app.include_router(zone_profiles.router, prefix="/api")
+app.include_router(excel.router, prefix="/api")
 
 ZONE_SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/images/processed", StaticFiles(directory=str(PROCESSED_DIR)), name="processed_images")
